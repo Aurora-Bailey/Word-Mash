@@ -1,43 +1,29 @@
 <template>
   <v-layout column justify-center align-center>
     <v-col cols="12" md="6">
-      <h2></h2>
+      <h2>Enter words separated by a space</h2>
       <v-textarea
         v-model="wordInput"
         solo
         label="Input your list of words, space separated. (apple orange mango)"
       ></v-textarea>
-      <v-btn :disabled="calculating" @click="generate()">
-        Generate
-      </v-btn>
-      <v-btn
-        :disabled="calculating"
-        color="error"
-        fab
-        small
-        dark
-        @click="faveWords.push(wordOutpt)"
-      >
-        <v-icon v-if="!calculating">mdi-heart</v-icon>
-        <v-progress-circular
-          v-else
-          indeterminate
-          color="primary"
-        ></v-progress-circular>
-      </v-btn>
-      <div class="display-block text-center headline">
+      <div v-if="wordOutpt.length > 0" class="display-block pa-6 display-2">
         <p>{{ wordOutpt }}</p>
-        <p>{{ countSyllable(wordOutpt) }} Syllable</p>
       </div>
+      <v-btn :disabled="calculating" color="primary" @click="generate()">
+        Mash
+      </v-btn>
+      <v-btn plain @click="numSyllable = (numSyllable % 5) + 1">
+        Syllables {{ numSyllable }}
+      </v-btn>
       <div>
         <v-chip
-          v-for="(fav, index) in faveWords"
+          v-for="(word, index) in wordsTried"
           :key="index"
           class="ma-2"
-          color="error"
+          color="default"
         >
-          {{ fav }}
-          <v-icon right>mdi-heart</v-icon>
+          {{ word }}
         </v-chip>
       </div>
     </v-col>
@@ -50,11 +36,12 @@ export default {
   data() {
     return {
       calculating: false,
+      numSyllable: 2,
       wordsTried: [],
       faveWords: [],
-      wordOutpt: 'Click the Generate button!',
+      wordOutpt: '',
       wordInput:
-        'Apple Plumb Mango Appricot Pear Peach banana orange lemon lime'
+        'apple arugula asparagus artichoke avocado banana blueberry broccoli carrot celery cherry eggplant figs grape grapefruit guava garlic ginger kale kiwi lemon mushroom melon mango nectarine nuts orange onion pepper pineapple pear peach raisin raspberry radish lettuce spinach squash sprouts strawberry tangerine watermelon yam zucchini'
     }
   },
   computed: {
@@ -143,10 +130,10 @@ export default {
     },
     buildWord(stack = 1000) {
       // max word rebuilds
-      if (stack === 0)
-        return 'Word list exausted! (1000 non-new words generated)'
+      if (stack === 0) return '!'
       let word = '@#'
       let limit = 20
+      let acceptable = true
       while (limit > 0) {
         const a = word.charAt(word.length - 2)
         const b = word.charAt(word.length - 1)
@@ -161,10 +148,13 @@ export default {
       if (
         this.wordList.includes(word.toLowerCase()) ||
         this.wordsTried.includes(word) ||
-        syllable(word) > 2
-      )
-        return this.buildWord(stack - 1)
-      return word
+        syllable(word) !== this.numSyllable ||
+        word.length < 4
+      ) {
+        acceptable = false
+      }
+      if (acceptable) return word
+      return this.buildWord(stack - 1)
     },
     generate() {
       this.calculating = true
